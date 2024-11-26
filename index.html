@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login e Jogos</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input[type="text"], input[type="password"] {
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            transition: border-color 0.3s ease;
+        }
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-color: #4a90e2;
+            outline: none;
+        }
+        input[type="submit"] {
+            background-color: #4a90e2;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        input[type="submit"]:hover {
+            background-color: #3a7bc8;
+        }
+        #game, #gameTicTacToe {
+            display: none;
+            margin-top: 20px;
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            color: #333;
+        }
+        #guessInput {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #guessButton, #resetButton, #playTicTacToe {
+            display: block;
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #guessButton:hover, #resetButton:hover, #playTicTacToe:hover {
+            background-color: #3a7bc8;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            gap: 10px;
+            margin: 20px auto;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 10px;
+        }
+        .cell:hover {
+            background-color: #d0d0d0;
+        }
+        .cell.x {
+            color: #4CAF50; /* Verde para X */
+        }
+        .cell.o {
+            color: #f44336; /* Vermelho para O */
+        }
+        .cell.winner {
+            background-color: #4CAF50; /* Verde para a célula vencedora */
+            color: white;
+        }
+        .status-draw {
+            color: #FFA500; /* Amarelo para empate */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="loginForm">
+            <h2>Login</h2>
+            <form id="login-form">
+                <label for="username">Usuário:</label>
+                <input type="text" id="username" name="username" required>
+                <label for="password">Senha:</label>
+                <input type="password" id="password" name="password" required>
+                <input type="submit" value="Entrar">
+            </form>
+        </div>
+
+        <div id="game">
+            <h2>Adivinhação de Números</h2>
+            <p>Advinhe um número entre 1 e 100:</p>
+            <input type="number" id="guessInput" min="1" max="100" required>
+            <button id="guessButton">Adivinhar</button>
+            <p id="status"></p>
+            <button id="resetButton">Reiniciar Jogo</button>
+            <button id="playTicTacToe">Jogar Jogo da Velha</button>
+        </div>
+
+        <div id="gameTicTacToe">
+            <h2>Jogo da Velha</h2>
+            <div class="board">
+                <div class="cell" data-index="0"></div>
+                <div class="cell" data-index="1"></div>
+                <div class="cell" data-index="2"></div>
+                <div class="cell" data-index="3"></div>
+                <div class="cell" data-index="4"></div>
+                <div class="cell" data-index="5"></div>
+                <div class="cell" data-index="6"></div>
+                <div class="cell" data-index="7"></div>
+                <div class="cell" data-index="8"></div>
+            </div>
+            <p id="statusTicTacToe"></p>
+            <button id="resetButtonTicTacToe">Reiniciar Jogo</button>
+            <button id="backToGuessGame">Voltar ao Jogo de Adivinhação</button>
+        </div>
+    </div>
+
+    <script>
+        // Adivinhação de Números
+        let randomNumber;
+        let attempts = 0;
+
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            showGuessGame();
+        });
+
+        function showGuessGame() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            startNewGuessGame();
+        }
+
+        function startNewGuessGame() {
+            randomNumber = Math.floor(Math.random() * 100) + 1;
+            attempts = 0;
+            document.getElementById('status').textContent = 'Faça sua adivinhação!';
+            document.getElementById('guessInput').value = '';
+        }
+
+        document.getElementById('guessButton').addEventListener('click', function() {
+            const userGuess = Number(document.getElementById('guessInput').value);
+            attempts++;
+            checkGuess(userGuess);
+        });
+
+        function checkGuess(guess) {
+            if (guess < randomNumber) {
+                document.getElementById('status').textContent = 'Muito baixo! Tente novamente.';
+            } else if (guess > randomNumber) {
+                document.getElementById('status').textContent = 'Muito alto! Tente novamente.';
+            } else {
+                document.getElementById('status').textContent = `Parabéns! Você adivinhou o número ${randomNumber} em ${attempts} tentativas!`;
+            }
+        }
+
+        document.getElementById('resetButton').addEventListener('click', startNewGuessGame);
+
+        // Jogo da Velha
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X'; // 'X' é o jogador
+        let gameActive = true;
+
+        document.getElementById('playTicTacToe').addEventListener('click', function() {
+            document.getElementById('game').style.display = 'none';
+            document.getElementById('gameTicTacToe').style.display = 'block';
+            startNewTicTacToeGame();
+        });
+
+        function startNewTicTacToeGame() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameActive = true;
+            document.getElementById('statusTicTacToe').textContent = `É a vez do jogador ${currentPlayer}`;
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.innerHTML = '';
+                cell.classList.remove('x', 'o', 'winner');
+            });
+        }
+
+        document.querySelectorAll('.cell').forEach((cell, index) => {
+            cell.addEventListener('click', () => handleCellClick(cell, index));
+        });
+
+        function handleCellClick(clickedCell, clickedCellIndex) {
+            if (board[clickedCellIndex] !== '' || !gameActive) {
+                return;
+            }
+
+            board[clickedCellIndex] = currentPlayer;
+            clickedCell.innerHTML = currentPlayer;
+            clickedCell.classList.add(currentPlayer.toLowerCase()); // Adiciona a classe correspondente ao jogador
+
+            checkResult();
+        }
+
+        function checkResult() {
+            const winningConditions = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6]
+            ];
+
+            let roundWon = false;
+
+            for (let i = 0; i < winningConditions.length; i++) {
+                const condition = winningConditions[i];
+                const a = board[condition[0]];
+                const b = board[condition[1]];
+                const c = board[condition[2]];
+
+                if (a === '' || b === '' || c === '') {
+                    continue;
+                }
+                if (a === b && b === c) {
+                    roundWon = true;
+                    // Destacar as células vencedoras
+                    condition.forEach(index => {
+                        document.querySelector(`.cell[data-index="${index}"]`).classList.add('winner');
+                    });
+                    break;
+                }
+            }
+
+            if (roundWon) {
+                document.getElementById('statusTicTacToe').textContent = `Jogador ${currentPlayer} ganhou!`;
+                gameActive = false;
+                return;
+            }
+
+            if (!board.includes('')) {
+                document.getElementById('statusTicTacToe').textContent = 'Empate!';
+                document.getElementById('statusTicTacToe').classList.add('status-draw'); // Adiciona a classe de empate
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            document.getElementById('statusTicTacToe').textContent = `É a vez do jogador ${currentPlayer}`;
+            document.getElementById('statusTicTacToe').classList.remove('status-draw'); // Remove a classe de empate se o jogo continuar
+        }
+
+        document.getElementById('resetButtonTicTacToe').addEventListener('click', startNewTicTacToeGame);
+        document.getElementById('backToGuessGame').addEventListener('click', function() {
+            document.getElementById('gameTicTacToe').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+        });
+    </script>
+</body>
+</html>
